@@ -1,0 +1,38 @@
+arrocha teste{
+	
+	//Declação de váriaveis, arrays e ponteiros
+	int i;
+	double b;
+	
+	string array[2];
+	bool vetor[5][5];
+	
+	int* ponteiro;
+	
+	/*Imprime de 0 até 9*/
+	arrudeia(i = 0; i < 10; i++){
+		oia ("Valor: "+1);
+	}
+	
+	se ( 1 < 10){
+		oia (I);
+	}senao se (1 == 10){
+		oia (1);
+	} senao{
+		oia (1);
+	}
+	
+	b = dizai(double);
+}
+
+void func1(){
+	oia (1);
+}
+
+void func2(int i ,double i){
+	oia (1);
+}
+
+void func3(int i ,double i, string d){
+	oia (1);
+}
