@@ -1,11 +1,175 @@
 grammar Recife;
 
-program : PROGRAM ID LCURLY sentenca* RCURLY func*;
+@parser::header{ 
+	import java.util.Map;
+	import java.util.HashMap;
+	import java.util.List;
+	import java.util.ArrayList;
+	import com.compilador.recife.ast.*;
+}
 
-sentenca : declaration | assign_op | print | loop 
-            | decision | read | func | array ;
+@parser::members {
+	Map<String, Object> symbolTable = new HashMap<String, Object>();
+}
 
-primary_variables : INT | DOUBLE | CHAR | BOOL | VAR | STRING;
+program : PROGRAM ID LCURLY 
+		{
+			List<ASTNode> body = new ArrayList<ASTNode>();
+			Map<String, Object> symbolTable = new HashMap<String, Object>();
+		}
+		(sentence {body.add($sentence.node);})* 
+		(procedure_declaration {body.add($procedure_declaration.node);})*
+		RCURLY 
+		{
+			
+			for(ASTNode n : body) {
+				n.execute(symbolTable);
+			}
+		};
+
+sentence returns [ASTNode node]: 
+	  print {$node = $print.node;}
+	| read_statement {$node = $read_statement.node;}
+	| var_decl {$node = $var_decl.node;}
+	| var_assign {$node = $var_assign.node;}
+	| conditional {$node = $conditional.node;}
+	| wilhe_loop {$node = $wilhe_loop.node;}
+	| procedure_declaration {$node = $procedure_declaration.node;}
+	| procedure_call {$node = $procedure_call.node;};
+	
+	/* |assign_op
+	|loop 
+    |decision
+    |read
+    |func
+    |array;*/
+
+
+var: 'int' |'double' | 'char'| 'bool' | 'string' | 'int*' |'double*' | 'bool*'; 
+print returns [ASTNode node]:PRINT LPAREN value=logicalExpression RPAREN SEMICOL 
+								{$node = new Oia($value.node);}; 
+
+read_statement returns [ASTNode node]: READ LPAREN varName=ID RPAREN SEMICOL{
+	String declaredType = (String) symbolTable.get($varName.text);
+	$node = new Read($varName.text,declaredType);
+};
+							
+primaryExpression returns [ASTNode node]: 
+    logicalNotExpression {$node = $logicalNotExpression.node;}
+    | INTEGER_LITERAL {$node = new Constant(Integer.parseInt($INTEGER_LITERAL.text));}
+    | BOOLEAN_LITERAL {$node = new Constant(Boolean.parseBoolean($BOOLEAN_LITERAL.text));}
+    | CHAR_LITERAL {$node = new Constant($CHAR_LITERAL.text.charAt(1));}
+    | STRING_LITERAL {$node = new Constant($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1));}
+    | DOUBLE_LITERAL {$node = new Constant(Float.parseFloat($DOUBLE_LITERAL.text));}
+    | ID {$node = new VarRef($ID.text);}
+    | LPAREN expr=logicalExpression RPAREN {$node = $expr.node;}
+    ; 
+logicalNotExpression returns [ASTNode node]: 
+    NOT operand=primaryExpression {$node = new LogicalNot($operand.node);}
+    ;
+   
+var_decl returns [ASTNode node]: var ID SEMICOL {
+	symbolTable.put($ID.text, $var.text);
+	$node = new VarDecl($ID.text, $var.text);
+};
+var_assign returns [ASTNode node]: ID ASSING logicalExpression SEMICOL {
+	String declaredType = (String) symbolTable.get($ID.text);
+	$node = new VarAssign($ID.text, $logicalExpression.node,declaredType);
+};
+
+logicalExpression returns [ASTNode node]:
+	  logicalOrExpression {$node = $logicalOrExpression.node;}
+	| logicalAndExpression {$node = $logicalAndExpression.node;}
+	| NOT logicalExpression {$node = new LogicalNot($logicalExpression.node);}
+	;
+
+logicalOrExpression returns [ASTNode node]: 
+    logicalAndExpression {$node = $logicalAndExpression.node;}
+    (OR right=logicalAndExpression {$node = new LogicalOr($node, $right.node);})*
+    ;
+
+logicalAndExpression returns [ASTNode node]: 
+    equalityExpression {$node = $equalityExpression.node;}
+    (AND right=equalityExpression {$node = new LogicalAnd($node, $right.node);})*
+    ;
+
+equalityExpression returns [ASTNode node]: 
+    relationalExpression {$node = $relationalExpression.node;}
+    (EQUALITY_OPERATOR right=relationalExpression {$node = new EqualityExpression($node, $right.node, $EQUALITY_OPERATOR.text);})*
+    ;
+
+relationalExpression returns [ASTNode node]: 
+    additiveExpression {$node = $additiveExpression.node;}
+    (RELATIONAL_OPERATOR right=additiveExpression {$node = new RelationalExpression($node, $right.node, $RELATIONAL_OPERATOR.text);})*
+    ;
+
+additiveExpression returns [ASTNode node]: 
+    multiplicativeExpression {$node = $multiplicativeExpression.node;}
+    (ADDITIVE_OPERATOR right=multiplicativeExpression {$node = new AdditiveExpression($node, $right.node, $ADDITIVE_OPERATOR.text);})*
+    ;
+
+multiplicativeExpression returns [ASTNode node]: 
+    unaryExpression {$node = $unaryExpression.node;}
+    (MULTIPLICATIVE_OPERATOR right=unaryExpression {$node = new MultiplicativeExpression($node, $right.node, $MULTIPLICATIVE_OPERATOR.text);})*
+    ;
+  
+unaryExpression returns [ASTNode node]: 
+    ADDITIVE_OPERATOR operand=unaryExpression {$node = new UnaryExpression($ADDITIVE_OPERATOR.text, $operand.node);}
+    | primaryExpression {$node = $primaryExpression.node;}
+    ;
+
+conditional returns [ASTNode node]: IF LPAREN logicalExpression RPAREN
+	{
+		List<ASTNode> body = new ArrayList<ASTNode>();
+	}
+	LCURLY (s1 = sentence {body.add($s1.node);})* RCURLY
+	(ELSE
+	{
+		List<ASTNode> elseBody = new ArrayList<ASTNode>();
+	}
+	LCURLY (s2 = sentence {elseBody.add($s2.node);})* RCURLY
+	{
+		$node = new If($logicalExpression.node, body, elseBody);
+	})*;
+
+wilhe_loop returns [ASTNode node]: WHILE LPAREN logicalExpression RPAREN
+	{
+		List<ASTNode> body = new ArrayList<ASTNode>();
+	}
+	LCURLY (s1 = sentence {body.add($s1.node);})* RCURLY
+	{
+		$node = new WhileLoop($logicalExpression.node, body);
+	};
+
+procedure_declaration returns [ASTNode node]: VOID ID LPAREN parameterList RPAREN LCURLY
+		{
+			List<ASTNode> body = new ArrayList<ASTNode>();
+			Map<String, Object> localSymbolTable = new HashMap<String, Object>();
+		}
+		(s = sentence {body.add($s.node);})* RCURLY
+		{$node = new ProcedureDeclaration($ID.text, body, localSymbolTable);};
+
+parameterList returns [List<Parameter> list]: 
+		{List<Parameter> params = new ArrayList<Parameter>();}
+		(p = parameter {params.add($p.param);} (COMMA p = parameter {params.add($p.param);})*)
+		{$list = params;};
+
+parameter returns [Parameter param]: 
+		var ID {$param = new Parameter($var.text, $ID.text);};
+
+procedure_call returns [ASTNode node]: ID LPAREN argumentList RPAREN SEMICOL
+		{$node = new ProcedureCall($ID.text, $argumentList.list);};
+
+argumentList returns [List<ASTNode> list]: 
+		{List<ASTNode> args = new ArrayList<ASTNode>();}
+		(e = logicalExpression {args.add($e.node);} (COMMA e = logicalExpression {args.add($e.node);})*)
+		{$list = args;};
+			
+//var_assign returns [ASTNode node]: ID ASSIGN logicalExpression SEMICOL {$node = new VarAssign($ID.text, $logicalExpression.node);};	
+//parameters_print returns [ASTNode node]: (NUMBER | ID | STR)(PLUS (NUMBER | ID | STR))*;
+
+/*
+
 
 op_relational: EQ | LT | GT | QEQT | LEQT | DIF;
 
@@ -21,12 +185,6 @@ compare: ID op_relational ID | ID op_relational NUMBER
         | NUMBER op_relational NUMBER
         | NUMBER op_relational ID; 
 
-pointer: POINTER_INT | POINTER_DOUBLE | POINTER_CHAR 
-        | POINTER_BOOL | POINTER_VAR;
-
-declaration : primary_variables ID SEMICOL 
-                | pointer ID SEMICOL;
-
 assign_op: ID ASSING NUMBER SEMICOL
             | ID ASSING ID SEMICOL
             | ID ASSING read
@@ -34,45 +192,37 @@ assign_op: ID ASSING NUMBER SEMICOL
 
 
 loop: FOR LPAREN assign_op compare SEMICOL ID 
-        increment RPAREN LCURLY  sentenca* RCURLY 
+        increment RPAREN LCURLY  sentence* RCURLY 
         | FOR LPAREN assign_op compare SEMICOL 
             assign_arithmetic RPAREN LCURLY  
-            sentenca RCURLY;
+            sentence RCURLY;
 
 
 decision: IF LPAREN compare RPAREN LCURLY
-            sentenca* RCURLY (ELSE LCURLY sentenca* RCURLY)*
+            sentence* RCURLY (ELSE LCURLY sentence* RCURLY)*
             | IF LPAREN compare RPAREN LCURLY
-            sentenca* RCURLY (ELSE IF LPAREN compare RPAREN LCURLY
-            sentenca* RCURLY)* ELSE LCURLY 
-            sentenca* RCURLY;
-
-print : PRINT LPAREN (NUMBER | ID | STR) RPAREN SEMICOL
-		|PRINT LPAREN (NUMBER | ID | STR)(PLUS (NUMBER | ID | STR))* RPAREN SEMICOL;
+            sentence* RCURLY (ELSE IF LPAREN compare RPAREN LCURLY
+            sentence* RCURLY)* ELSE LCURLY 
+            sentence* RCURLY;
 
 read: READ LPAREN primary_variables RPAREN SEMICOL; 
 
-func: (primary_variables | VOID | ID) ID LPAREN  (primary_variables ID)* (COMMA primary_variables ID)* RPAREN LCURLY sentenca* RCURLY;
+func: (primary_variables | VOID | ID) ID LPAREN  (primary_variables ID)* (COMMA primary_variables ID)* RPAREN LCURLY sentence* RCURLY;
 
 array: primary_variables ID LBRACKETS NUMBER RBRACKETS SEMICOL
 		| primary_variables ID LBRACKETS NUMBER RBRACKETS LBRACKETS NUMBER RBRACKETS SEMICOL; 
 
-
+*/
 PROGRAM: 'arrocha';
-VAR: 'var';
 CONST: 'const';
 PRINT: 'oia';
 READ: 'dizai';
 IF: 'se';
 ELSE: 'senao';
-FOR: 'arrudeia';
+WHILE: 'arrudeia';
 VOID: 'void';
 
-INT: 'int';
-DOUBLE: 'double';
-CHAR: 'char';
-BOOL: 'bool';
-STRING: 'string';
+
 POINTER_INT: 'int*';
 POINTER_DOUBLE: 'double*';
 POINTER_CHAR: 'char*';
@@ -80,10 +230,8 @@ POINTER_BOOL: 'bool*';
 POINTER_VAR: 'var*';
 POINTER_STRING: 'string*';
 
-PLUS: '+';
-MINUS: '-';
-MULT: '*';
-DIV: '/';
+ADDITIVE_OPERATOR: '+' | '-';
+MULTIPLICATIVE_OPERATOR: '*' | '/';
 MOD: '%';
 ASSING: '=';
 PLUS_PLUS: '++';
@@ -93,12 +241,9 @@ AND : '&&' ;
 OR : '||' ;
 NOT : '!' ;
 
-EQ : '==' ;
-LT: '<';
-GT: '>';
-QEQT: '>=';
-LEQT: '<=';
-DIF: '!=';
+EQUALITY_OPERATOR: '==' | '!=';
+RELATIONAL_OPERATOR: '>' | '<' | '>=' | '<=';
+
 
 SEMICOL : ';' ;
 LPAREN : '(' ;
@@ -110,8 +255,11 @@ LBRACKETS:'[';
 RBRACKETS: ']';
 COMMA: ',';
 
-NUMBER : [0-9]+ ;
-STR: '"' ~["\r\n]* '"';
+INTEGER_LITERAL: [0-9]+;
+BOOLEAN_LITERAL: 'true' | 'false';
+CHAR_LITERAL: '\'' ~["'\r\n'] '\'';
+STRING_LITERAL: '"' ~["\r\n"]* '"';
+DOUBLE_LITERAL: [0-9]+ '.' [0-9]+;
 ID: [a-zA-Z_][a-zA-Z_0-9]* ;
 WS: [ \t\n\r\f]+ -> skip ;
 CM: ('//' ~[\r\n]* | '/*' .*? '*/') -> skip;
