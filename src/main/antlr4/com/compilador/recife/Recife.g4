@@ -31,7 +31,10 @@ sentence returns [ASTNode node]:
 	  print {$node = $print.node;}
 	| read_statement {$node = $read_statement.node;}
 	| var_decl {$node = $var_decl.node;}
+	| pointer_decl {$node = $pointer_decl.node;}
+	| pointer_manipulation {$node = $pointer_manipulation.node;}
 	| var_assign {$node = $var_assign.node;}
+	| pointer_assign {$node = $pointer_assign.node;}
 	| conditional {$node = $conditional.node;}
 	| wilhe_loop {$node = $wilhe_loop.node;}
 	| procedure_declaration {$node = $procedure_declaration.node;}
@@ -45,7 +48,8 @@ sentence returns [ASTNode node]:
     |array;*/
 
 
-var: 'int' |'double' | 'char'| 'bool' | 'string' | 'int*' |'double*' | 'bool*'; 
+var: 'int' |'double' | 'char'| 'bool' | 'string';
+
 print returns [ASTNode node]:PRINT LPAREN value=logicalExpression RPAREN SEMICOL 
 								{$node = new Oia($value.node);}; 
 
@@ -72,9 +76,35 @@ var_decl returns [ASTNode node]: var ID SEMICOL {
 	symbolTable.put($ID.text, $var.text);
 	$node = new VarDecl($ID.text, $var.text);
 };
+
+pointer_var: 'int*' |'double*' | 'char*'| 'bool*' | 'string*';
+pointer_decl returns [ASTNode node]: POINTER pointer_var ID SEMICOL {
+	symbolTable.put($ID.text, $pointer_var.text);
+	$node = new VarDecl($ID.text, $pointer_var.text);
+};
+
 var_assign returns [ASTNode node]: ID ASSING logicalExpression SEMICOL {
 	String declaredType = (String) symbolTable.get($ID.text);
 	$node = new VarAssign($ID.text, $logicalExpression.node,declaredType);
+};
+
+pointer_assign returns [ASTNode node]: POINTER pointer=ID ASSING variable=ID SEMICOL {
+	String declaredTypePointer = (String) symbolTable.get($pointer.text);
+	String declaredTypeVar = (String) symbolTable.get($variable.text);
+	symbolTable.put($pointer.text, $variable.text);
+	$node = new PointerAssign($pointer.text, $variable.text,declaredTypePointer,declaredTypeVar);
+};
+
+
+value_pointer returns [ASTNode node]: INTEGER_LITERAL {$node = new Constant(Integer.parseInt($INTEGER_LITERAL.text));}
+    | BOOLEAN_LITERAL {$node = new Constant(Boolean.parseBoolean($BOOLEAN_LITERAL.text));}
+    | CHAR_LITERAL {$node = new Constant($CHAR_LITERAL.text.charAt(1));}
+    | STRING_LITERAL {$node = new Constant($STRING_LITERAL.text.substring(1, $STRING_LITERAL.text.length() - 1));}
+    | DOUBLE_LITERAL {$node = new Constant(Float.parseFloat($DOUBLE_LITERAL.text));};
+
+pointer_manipulation returns [ASTNode node]: POINTER ID ASSING value_pointer SEMICOL {
+	String pointerValue = (String) symbolTable.get($ID.text);
+	$node = new PointerManipulation($ID.text, $value_pointer.node,pointerValue);
 };
 
 logicalExpression returns [ASTNode node]:
@@ -221,14 +251,7 @@ IF: 'se';
 ELSE: 'senao';
 WHILE: 'arrudeia';
 VOID: 'void';
-
-
-POINTER_INT: 'int*';
-POINTER_DOUBLE: 'double*';
-POINTER_CHAR: 'char*';
-POINTER_BOOL: 'bool*';
-POINTER_VAR: 'var*';
-POINTER_STRING: 'string*';
+POINTER: 'pointer';
 
 ADDITIVE_OPERATOR: '+' | '-';
 MULTIPLICATIVE_OPERATOR: '*' | '/';

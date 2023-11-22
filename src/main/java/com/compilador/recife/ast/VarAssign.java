@@ -30,7 +30,7 @@ public class VarAssign implements ASTNode {
 		
 		
 		symbolTable.put(name, result);
-		
+		 
 
 		return result;
 	}

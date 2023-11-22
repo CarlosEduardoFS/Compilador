@@ -1,9 +1,17 @@
 arrocha teste{
 	
-	int i;
+	int b;
+	pointer int* a;
 	
-	dizai(i);
+	oia("value of b before: "+b);
 	
-	oia("Valor digitado: "+i);
+	pointer a = b;
+	pointer a = 1;
+	
+	oia("value of b after: "+b);
+	
+	pointer a = 10;
+	
+	oia("value of b after: "+b);
 }
 

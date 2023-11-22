@@ -20,11 +20,26 @@ public class VarDecl implements ASTNode {
 		}
 
 		// Adiciona a variável à tabela de símbolos com um valor inicial nulo
-		symbolTable.put(name, null);
+		symbolTable.put(name, insertDefaltuValue(type));
 
 		return null;
 	}
-
+	
+	private Object insertDefaltuValue(String type) {
+		if ("int".equals(type)) {
+			return 0;
+		} else if ("double".equals(type)) {
+			return 0.0;
+		} else if ("char".equals(type)) {
+			return 'a';
+		} else if ("bool".equals(type)) {
+			return false;
+		} else if ("string".equals(type)) {
+			return " ";
+		}
+		return false;
+	}
+	
 	public String getName() {
 		return name;
 	}
