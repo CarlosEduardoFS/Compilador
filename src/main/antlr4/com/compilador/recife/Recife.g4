@@ -18,11 +18,17 @@ program : PROGRAM ID LCURLY
 			Map<String, Object> symbolTable = new HashMap<String, Object>();
 		}
 		(sentence {body.add($sentence.node);})* 
-		(procedure_declaration {body.add($procedure_declaration.node);})*
-		RCURLY 
+		RCURLY (procedure_declaration {body.add($procedure_declaration.node);})*
 		{
-			
+			List<ASTNode> listProcedureCall = new ArrayList<>();
 			for(ASTNode n : body) {
+				if (n instanceof ProcedureCall)
+					listProcedureCall.add(n);
+				else
+					n.execute(symbolTable);
+			}
+			
+			for(ASTNode n : listProcedureCall) {
 				n.execute(symbolTable);
 			}
 		};
@@ -37,7 +43,6 @@ sentence returns [ASTNode node]:
 	| pointer_assign {$node = $pointer_assign.node;}
 	| conditional {$node = $conditional.node;}
 	| wilhe_loop {$node = $wilhe_loop.node;}
-	| procedure_declaration {$node = $procedure_declaration.node;}
 	| procedure_call {$node = $procedure_call.node;};
 	
 	/* |assign_op
@@ -175,9 +180,17 @@ procedure_declaration returns [ASTNode node]: VOID ID LPAREN parameterList RPARE
 		{
 			List<ASTNode> body = new ArrayList<ASTNode>();
 			Map<String, Object> localSymbolTable = new HashMap<String, Object>();
+			List<Parameter> parameterList = $parameterList.list;
 		}
-		(s = sentence {body.add($s.node);})* RCURLY
-		{$node = new ProcedureDeclaration($ID.text, body, localSymbolTable);};
+			(s = sentence {body.add($s.node);})*  RCURLY
+			{$node = new ProcedureDeclaration($ID.text, body, localSymbolTable,parameterList);}
+		|VOID ID LPAREN RPAREN LCURLY
+		{
+			List<ASTNode> body = new ArrayList<ASTNode>();
+			Map<String, Object> localSymbolTable = new HashMap<String, Object>();
+		}
+			(s = sentence {body.add($s.node);})* RCURLY
+			{$node = new ProcedureDeclaration($ID.text, body, localSymbolTable, null);};
 
 parameterList returns [List<Parameter> list]: 
 		{List<Parameter> params = new ArrayList<Parameter>();}
@@ -188,61 +201,15 @@ parameter returns [Parameter param]:
 		var ID {$param = new Parameter($var.text, $ID.text);};
 
 procedure_call returns [ASTNode node]: ID LPAREN argumentList RPAREN SEMICOL
-		{$node = new ProcedureCall($ID.text, $argumentList.list);};
+			{$node = new ProcedureCall($ID.text, $argumentList.list);} 
+		| ID LPAREN  RPAREN SEMICOL
+			{$node = new ProcedureCall($ID.text, null);};
 
 argumentList returns [List<ASTNode> list]: 
 		{List<ASTNode> args = new ArrayList<ASTNode>();}
 		(e = logicalExpression {args.add($e.node);} (COMMA e = logicalExpression {args.add($e.node);})*)
 		{$list = args;};
 			
-//var_assign returns [ASTNode node]: ID ASSIGN logicalExpression SEMICOL {$node = new VarAssign($ID.text, $logicalExpression.node);};	
-//parameters_print returns [ASTNode node]: (NUMBER | ID | STR)(PLUS (NUMBER | ID | STR))*;
-
-/*
-
-
-op_relational: EQ | LT | GT | QEQT | LEQT | DIF;
-
-op_arithmetic : PLUS | MINUS | MULT | DIV | MOD; 
-
-increment :  PLUS_PLUS | MINUS_MINUS;
-
-assign_arithmetic : ID ASSING ID op_arithmetic ID 
-                    | ID ASSING ID op_arithmetic NUMBER
-                    | ID ASSING ID op_arithmetic READ;
-
-compare: ID op_relational ID | ID op_relational NUMBER
-        | NUMBER op_relational NUMBER
-        | NUMBER op_relational ID; 
-
-assign_op: ID ASSING NUMBER SEMICOL
-            | ID ASSING ID SEMICOL
-            | ID ASSING read
-            | ID ASSING STRING SEMICOL;
-
-
-loop: FOR LPAREN assign_op compare SEMICOL ID 
-        increment RPAREN LCURLY  sentence* RCURLY 
-        | FOR LPAREN assign_op compare SEMICOL 
-            assign_arithmetic RPAREN LCURLY  
-            sentence RCURLY;
-
-
-decision: IF LPAREN compare RPAREN LCURLY
-            sentence* RCURLY (ELSE LCURLY sentence* RCURLY)*
-            | IF LPAREN compare RPAREN LCURLY
-            sentence* RCURLY (ELSE IF LPAREN compare RPAREN LCURLY
-            sentence* RCURLY)* ELSE LCURLY 
-            sentence* RCURLY;
-
-read: READ LPAREN primary_variables RPAREN SEMICOL; 
-
-func: (primary_variables | VOID | ID) ID LPAREN  (primary_variables ID)* (COMMA primary_variables ID)* RPAREN LCURLY sentence* RCURLY;
-
-array: primary_variables ID LBRACKETS NUMBER RBRACKETS SEMICOL
-		| primary_variables ID LBRACKETS NUMBER RBRACKETS LBRACKETS NUMBER RBRACKETS SEMICOL; 
-
-*/
 PROGRAM: 'arrocha';
 CONST: 'const';
 PRINT: 'oia';

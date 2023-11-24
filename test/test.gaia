@@ -13,5 +13,15 @@ arrocha teste{
 	pointer a = 10;
 	
 	oia("value of b after: "+b);
+	
+	teste(b);
+	teste2();
 }
 
+void teste (int i){ 
+	oia(i);
+}
+
+void teste2 (){ 
+	oia("Sem Argumentos");
+}

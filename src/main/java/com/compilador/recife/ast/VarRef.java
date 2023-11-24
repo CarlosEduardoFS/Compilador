@@ -18,4 +18,9 @@ public class VarRef implements ASTNode {
             throw new RuntimeException("Variável não encontrada: " + varName);
         }
     }
+
+	@Override
+	public String toString() {
+		return "VarRef [varName=" + varName + "]";
+	}
 }

@@ -27,4 +27,8 @@ public class Parameter implements ASTNode {
         return name;
     }
 
+	@Override
+	public String toString() {
+		return "Parameter [type=" + type + ", name=" + name + "]";
+	}
 }
