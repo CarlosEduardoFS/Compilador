@@ -1,27 +1,63 @@
 arrocha teste{
 	
-	int b;
-	pointer int* a;
+	int value;
+	double PI;
+	char b;
+	string language;
+	bool repeat;
 	
-	oia("value of b before: "+b);
+	pointer char* pointerChar;
 	
-	pointer a = b;
-	pointer a = 1;
+	value = 0; 
+	PI = 3.14;
+	b = 'A';
+	language = "Recife";
+	repeat = true;
 	
-	oia("value of b after: "+b);
+	oial("Apresentando a linguagem: "+language);
 	
-	pointer a = 10;
+	arrudeia(repeat){
+		
+		se (value == 5){
+			repeat = false;
+		}senao{
+			oial("Valor = "+value);
+		}
+		
+		value = value + 1;
+	}
 	
-	oia("value of b after: "+b);
+	oial("value of b before: "+b);
+	pointer pointerChar = b;
+	pointer pointerChar = 'c';
+	
+	oial("value of b after: "+b);
 	
 	teste(b);
 	teste2();
+	
 }
 
-void teste (int i){ 
-	oia(i);
+void teste (char i){ 
+	oial("O parametro passado para o procediemnto é: "+i);
 }
 
 void teste2 (){ 
-	oia("Sem Argumentos");
+	double numerator;
+	oia("Digite um valor para ser subtraido, multiplicado e dividido por 5: ");
+	dizai(numerator);
+	
+	double subtraction;
+	double multi;
+	double division;
+	
+	subtraction = numerator - 5.0;
+	multi = numerator * 5.0;
+	division = numerator/5.0;
+	
+	oial(numerator +" - 5 = "+subtraction);
+	oial(numerator +" * 5 = "+multi); 
+	oial(numerator +"/5 = "+division); 
+	 
+	
 }

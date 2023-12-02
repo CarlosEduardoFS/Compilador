@@ -44,19 +44,13 @@ sentence returns [ASTNode node]:
 	| conditional {$node = $conditional.node;}
 	| wilhe_loop {$node = $wilhe_loop.node;}
 	| procedure_call {$node = $procedure_call.node;};
-	
-	/* |assign_op
-	|loop 
-    |decision
-    |read
-    |func
-    |array;*/
-
 
 var: 'int' |'double' | 'char'| 'bool' | 'string';
 
 print returns [ASTNode node]:PRINT LPAREN value=logicalExpression RPAREN SEMICOL 
-								{$node = new Oia($value.node);}; 
+								{$node = new Oia($value.node);}
+								|PRINTL LPAREN value=logicalExpression RPAREN SEMICOL 
+								{$node = new Oial($value.node);} ; 
 
 read_statement returns [ASTNode node]: READ LPAREN varName=ID RPAREN SEMICOL{
 	String declaredType = (String) symbolTable.get($varName.text);
@@ -157,7 +151,11 @@ conditional returns [ASTNode node]: IF LPAREN logicalExpression RPAREN
 	{
 		List<ASTNode> body = new ArrayList<ASTNode>();
 	}
-	LCURLY (s1 = sentence {body.add($s1.node);})* RCURLY
+	LCURLY (s1 = sentence {body.add($s1.node);})* 
+	{
+		$node = new If($logicalExpression.node, body, null);
+	}
+	RCURLY
 	(ELSE
 	{
 		List<ASTNode> elseBody = new ArrayList<ASTNode>();
@@ -213,6 +211,7 @@ argumentList returns [List<ASTNode> list]:
 PROGRAM: 'arrocha';
 CONST: 'const';
 PRINT: 'oia';
+PRINTL: 'oial';
 READ: 'dizai';
 IF: 'se';
 ELSE: 'senao';

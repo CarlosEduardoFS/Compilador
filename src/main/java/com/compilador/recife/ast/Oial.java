@@ -2,12 +2,12 @@ package com.compilador.recife.ast;
 
 import java.util.Map;
 
-public class Oia implements ASTNode{
+public class Oial implements ASTNode{
 	
 	private ASTNode expression;
 	
 	
-	public Oia(ASTNode expression) {
+	public Oial(ASTNode expression) {
 		super();
 		this.expression = expression;
 	}
@@ -15,7 +15,7 @@ public class Oia implements ASTNode{
 
 	@Override
 	public Object execute(Map<String, Object> symbolTable) {
-		System.out.print(expression.execute(symbolTable));
+		System.out.println(expression.execute(symbolTable));
 		return null;
 	}
 

@@ -31,7 +31,7 @@ public class VarDecl implements ASTNode {
 		} else if ("double".equals(type)) {
 			return 0.0;
 		} else if ("char".equals(type)) {
-			return 'a';
+			return ' ';
 		} else if ("bool".equals(type)) {
 			return false;
 		} else if ("string".equals(type)) {

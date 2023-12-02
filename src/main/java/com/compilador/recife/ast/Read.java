@@ -22,11 +22,10 @@ public class Read implements ASTNode {
         
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("Enter a value for variable '" + variableName + "' of type '" + variableType + "': ");
         String userInput = scanner.nextLine();
 
         Object parsedValue = parseInput(userInput, variableType);
-
+        
         symbolTable.put(variableName, parsedValue);
 
         scanner.close();
@@ -39,7 +38,7 @@ public class Read implements ASTNode {
             if ("int".equals(targetType)) {
                 return Integer.parseInt(userInput);
             } else if ("double".equals(targetType)) {
-            	return Double.parseDouble(userInput);
+            	return Float.parseFloat(userInput);
             } else if ("char".equals(targetType)) {
             	return userInput.charAt(0);
             } else if ("bool".equals(targetType)) {

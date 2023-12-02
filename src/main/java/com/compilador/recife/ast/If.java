@@ -22,8 +22,10 @@ public class If implements ASTNode {
 				node.execute(symbolTable);
 			}
 		} else {
-			for (ASTNode node : elseBody) {
-				node.execute(symbolTable);
+			if (elseBody != null) {
+				for (ASTNode node : elseBody) {
+					node.execute(symbolTable);
+				}
 			}
 		}
 		return null;

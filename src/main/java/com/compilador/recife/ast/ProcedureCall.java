@@ -17,40 +17,39 @@ public class ProcedureCall implements ASTNode {
 	public Object execute(Map<String, Object> symbolTable) {
 		// Recupera o procedimento da tabela de símbolos
 		ProcedureDeclaration procedureDeclaration = (ProcedureDeclaration) symbolTable.get(procedureName);
-		
+
 		// Verifica se o procedimento existe
 		if (procedureDeclaration == null) {
 			throw new RuntimeException("Procedimento '" + procedureName + "' não declarado.");
 		}
-		
+
 		// Cria um novo escopo local para a execução da função
 		Map<String, Object> localSymbolTable = procedureDeclaration.getLocalSymbolTable();
 
 		if (argumentList != null && localSymbolTable.size() != argumentList.size())
-				throw new RuntimeException(
-						"Quantidade de parametros inválidos passadas na chamada do procedimento'" + procedureName + "'.");
-			
-			
-		
-			Object[] keys = localSymbolTable.keySet().toArray();
-			
-			for (int i = 0; i < keys.length; i++) {
-				if (!isTypeCompatible((String) localSymbolTable.get(keys[0].toString()), argumentList.get(i).execute(symbolTable)))
-					throw new RuntimeException("Os tipos de dados passados como parametors são incompativeis!");
-				
-				localSymbolTable.put(keys[i].toString(), argumentList.get(i).execute(symbolTable));
-			}
+			throw new RuntimeException(
+					"Quantidade de parametros inválidos passadas na chamada do procedimento'" + procedureName + "'.");
 
-			// Executa o corpo do procedimento
-			for (ASTNode node : procedureDeclaration.getBody()) {
-				node.execute(localSymbolTable);
-			}
+		Object[] keys = localSymbolTable.keySet().toArray();
 
-			// Retorna null, já que o procedimento não retorna valor
-			return null;
-	
+		for (int i = 0; i < keys.length; i++) {
+			if (!isTypeCompatible((String) localSymbolTable.get(keys[0].toString()),
+					argumentList.get(i).execute(symbolTable)))
+				throw new RuntimeException("Os tipos de dados passados como parametors são incompativeis!");
+
+			localSymbolTable.put(keys[i].toString(), argumentList.get(i).execute(symbolTable));
+		}
+
+		// Executa o corpo do procedimento
+		for (ASTNode node : procedureDeclaration.getBody()) {
+			node.execute(localSymbolTable);
+		}
+
+		// Retorna null, já que o procedimento não retorna valor
+		return null;
+
 	}
-	
+
 	private boolean isTypeCompatible(String declaredType, Object assignedValue) {
 		if ("int".equals(declaredType) && assignedValue instanceof Integer) {
 			return true;
@@ -65,5 +64,5 @@ public class ProcedureCall implements ASTNode {
 		}
 		return false;
 	}
-	
+
 }

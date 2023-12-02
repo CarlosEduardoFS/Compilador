@@ -53,6 +53,8 @@ public class AdditiveExpression implements ASTNode {
 				return leftInt + rightInt;
 			case "-":
 				return leftInt - rightInt;
+			case "/":
+				return leftInt/rightInt;
 			default:
 				throw new RuntimeException("Operador inválido: " + operator);
 			}
@@ -65,6 +67,8 @@ public class AdditiveExpression implements ASTNode {
 				return leftFloat + rightFloat;
 			case "-":
 				return leftFloat - rightFloat;
+			case "/":
+				return leftFloat/rightFloat;
 			default:
 				throw new RuntimeException("Operador inválido: " + operator);
 			}
